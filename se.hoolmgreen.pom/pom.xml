@@ -1,0 +1,430 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>se.hoolmgreen.pom</groupId>
+    <artifactId>hoolmgreen-parent-pom</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0.201520.0-SNAPSHOT</version>
+
+    <name>Hoolmgreen Corporate POM</name>
+
+    <organization>
+        <name>Hoolmgreen</name>
+        <url>https://www.hoolmgreen.se/</url>
+    </organization>
+    
+    <scm>
+        <connection>scm:svn:https://hoolmgreen.se/svn/hoolmgreen/se/hoolmgreen/pom/branches/1.0.201520</connection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>${release.repository.id}</id>
+            <name>Hoolmgreen Internal Release Repository</name>
+            <url>${release.repository.url}</url>
+            <layout>default</layout>
+        </repository>
+        <snapshotRepository>
+            <id>${snapshot.repository.id}</id>
+            <name>Hoolmgreen Internal Snapshot Repository</name>
+            <url>${snapshot.repository.url}</url>
+            <layout>default</layout>
+        </snapshotRepository>
+        <site>
+            <id>www.linkon.se/docs</id>
+            <name>Hoolmgreen Internal Documentation Site</name>
+            <url>scp://untmvln442.edb.se/opt/apache-2.2.6/www_htdocs/docs/a.docs.linkon.se/projects/${project.groupId}/${project.artifactId}/${project.version}</url>
+        </site>
+    </distributionManagement>
+
+    <properties>
+        <defaultCompileVersion>1.8</defaultCompileVersion>
+        <project.build.sourceEncoding>Cp1252</project.build.sourceEncoding>
+        <junit.version>4.8.2</junit.version>
+		<hoolmgreen.assembly.version>1.0.0-SNAPSHOT</hoolmgreen.assembly.version>
+        <release.repository.id>hoolmgreen-internal</release.repository.id>
+        <release.repository.url>http://hoolmgreen.se/content/repositories/releases/</release.repository.url>
+        <snapshot.repository.id>linkon-internal-snapshot</snapshot.repository.id>
+        <snapshot.repository.url>http://hoolmgreen.se/content/repositories/snapshots/</snapshot.repository.url>
+    </properties>
+
+
+
+    <!--
+    General profiles with default values. Values may be overridden by identical profile IDs
+    in child pom's.
+    -->
+    <profiles>
+
+        <!--
+        Profile used when performing release.
+        
+        Marks artifact as a release.
+        Attaches source
+        Attaches javadoc
+        Optimizes compilation
+        Compiles without debug
+        -->
+        <profile>
+            <id>release</id>
+
+            <build>
+                <plugins>
+                    <!-- Update Release Info -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <inherited>true</inherited>
+                        <configuration>
+                            <updateReleaseInfo>true</updateReleaseInfo>
+                        </configuration>
+                    </plugin>
+
+                    <!-- Compile optimization -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <inherited>true</inherited>
+                        <configuration>
+                            <debug>false</debug>
+                            <optimize>true</optimize>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+        Profile which enables hot-deploy of exploded ear-file to
+        deploy directory of an application server.
+        Requires the properties:
+        jboss.deploy.serverroot - the path to the JBoss server installation
+        jboss.deploy.servername - the name of the specific server to deploy in
+    -->
+        <profile>
+            <id>develop</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-ear-plugin</artifactId>
+                            <configuration>
+                                <workDirectory>
+                                    ${jboss.deploy.serverroot}\server\${jboss.deploy.servername}\deploy\${project.build.finalName}.ear
+                                </workDirectory>
+                            </configuration>
+                            <inherited>true</inherited>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <!-- 
+        Profile which exports Hoolmgreen dependencies file...
+    -->
+        <profile>
+            <id>assemble-dependencies-file</id>
+            <activation>
+                <property>
+                    <!-- active unless Maven command line option defines the specified property -->
+                    <name>!skipLinkonDependencies</name>
+                </property>
+            </activation>
+            <build>
+
+                <plugins>        
+                    <!-- ...by including it in the assembly, for easy listing of artifact dependents. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>se.hoolmgreen.assembly</groupId>
+                                <artifactId>hoolmgreen-dependencies-descriptor</artifactId>
+                                <version>${hoolmgreen.assembly.version}</version>
+                            </dependency>
+                        </dependencies>
+
+                        <executions>
+                            <execution>
+                                <id>create-dependencies-distribution</id>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <phase>package</phase>
+                                <configuration>
+                                    <descriptorRefs>
+                                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                                    </descriptorRefs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile> 
+
+    </profiles>
+
+    <!-- General configuration of dependencies -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+	
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
+	</dependencies>
+
+
+    <build>
+
+        <!--
+          Each plugin listed here will run for EVERY BUILD
+    -->
+        <plugins>
+            <!-- Produces Hoolmgreen dependencies file, by listing dependencies for each build to file in target directory. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>hoolmgreen-dependency-list</id>
+                        <goals>
+                            <goal>list</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-dependencies.txt</outputFile>
+                            <silent>true</silent>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Check todo.xml -->
+			<!--
+            <plugin>
+                <groupId>se.linkon.maven.plugins</groupId>
+                <artifactId>linkon-todo-plugin</artifactId>
+                <version>1.0.201420.1</version>
+                <executions>
+                    <execution>
+                        <id>check-todos</id>
+                        <configuration>
+                        </configuration>
+                        <goals>
+                            <goal>check-todos</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+			-->
+        </plugins>
+
+        <extensions>
+            <!--
+          Used for importing configuration for the
+          checkstyle report plugin.
+          -->
+           <extension>
+                <groupId>se.hoolmgreen.maven.plugins.config</groupId>
+                <artifactId>hoolmgreen-checkstyle-config</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+            </extension>
+        </extensions>
+
+        <!--
+    General configuration of plugin:s that are used.
+    To avoid inconsistent behavior in builds, plugin versions
+    should be pinned downed here.
+    -->
+        <pluginManagement>
+            <plugins>
+                <!--  LINKON PLUGINS -->
+
+                <!--
+        v1.0 - The archive plugin copies an artifact to a
+        legacy repository used by legacy ant projects.
+        By default the copy is made only when deploying
+        non-snapshot-releases.
+        -->
+                <!-- plugin>
+          <groupId>se.linkon.maven.plugins</groupId>
+          <artifactId>linkon-archive-plugin</artifactId>
+          <version>1.1</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>archive</goal>
+              </goals>
+              <phase>deploy</phase>
+              <inherited>true</inherited>
+            </execution>
+          </executions>
+        </plugin-->
+
+                <!--
+        v1.1 - The rpm plugin
+        -->
+                <!-- plugin>
+          <groupId>se.linkon.maven.plugins</groupId>
+          <artifactId>linkon-rpm-plugin</artifactId>
+          <version>1.1</version>
+        </plugin-->
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.3.2</version>
+                    <!-- configuration will most likely make no difference under plugin management  -->
+                    <configuration>
+                        <source>${defaultCompileVersion}</source>
+                        <target>${defaultCompileVersion}</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>2.1.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-ejb-plugin</artifactId>
+                    <version>2.3</version>
+                    <configuration>
+                        <ejbVersion>3.0</ejbVersion>
+                        <generateClient>true</generateClient>
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+								<useUniqueVersions>false</useUniqueVersions>
+                            </manifest>							  
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.4.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-ear-plugin</artifactId>
+                    <version>2.3.1</version>
+                    <configuration>
+                        <version>1.4</version>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jboss-maven-plugin</artifactId>
+                    <version>1.3.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.1.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <configuration>
+                        <stagingSiteURL>scp://untmvln442.edb.se/opt/apache-2.2.6/www_htdocs/docs/a.docs.linkon.se/projects/stage-site</stagingSiteURL>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-project-info-reports-plugin</artifactId>
+                    <version>2.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>taglist-maven-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+
+                <plugin>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.2.1</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.4</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jaxws-maven-plugin</artifactId>
+                    <version>1.12</version>
+                    <configuration>
+                        <target>2.0</target>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jboss-packaging-maven-plugin</artifactId>
+                    <version>2.0-beta-1</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.3.2</version>
+                    <configuration>
+                        <tagNameFormat>@{project.version}</tagNameFormat>
+                        <releaseProfiles>release</releaseProfiles>
+                        <useReleaseProfile>false</useReleaseProfile>
+                        <goals>deploy</goals>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>xml-maven-plugin</artifactId>
+                    <version>1.0-beta-3</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
+
